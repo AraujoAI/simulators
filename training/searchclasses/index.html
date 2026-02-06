@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aras Innovator Training Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --aras-red: #c21d24;
+            --aras-blue: #2b5797;
+            --sidebar-bg: #f5f5f5;
+            --border-color: #d1d1d1;
+            --header-bg: #eeeeee;
+            --row-hover: #fff9c4;
+            --login-bg: #3b2841;
+        }
+
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+
+        /* Login Background Graphics */
+        .login-wrapper {
+            background-color: var(--login-bg);
+            background-image: radial-gradient(circle at 20% 80%, #5a3d61 0%, transparent 40%),
+                              radial-gradient(circle at 80% 20%, #4a3350 0%, transparent 40%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+        }
+
+        .login-card {
+            background: white;
+            display: flex;
+            width: 850px;
+            height: 480px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .login-left {
+            flex: 1.2;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid #eee;
+        }
+
+        .login-right {
+            flex: 1;
+            background: #e2e2e2;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation Styles */
+        .header {
+            height: 48px;
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            height: calc(100vh - 48px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-item {
+            padding: 6px 12px;
+            font-size: 13px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover { background-color: #e2e2e2; }
+        .nav-item.active { background-color: #ffffff; font-weight: bold; border-left: 3px solid var(--aras-red); }
+
+        /* Training Submenu */
+        .submenu-item {
+            padding: 6px 12px 6px 40px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .submenu-item:hover { background-color: #e2e2e2; }
+
+        /* Grid UI */
+        .widget-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .widget-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            aspect-ratio: 1/1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .widget-card:hover { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .widget-label { font-size: 11px; margin-top: 8px; text-align: center; color: #444; }
+
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            background: white;
+        }
+        .data-table th {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            text-align: left;
+            font-weight: normal;
+            position: sticky;
+            top: 0;
+        }
+        .data-table td { border: 1px solid #ccc; padding: 6px 8px; }
+        .data-table tr:hover { background-color: var(--row-hover); }
+
+        .btn-royal-gray { background-color: #a0a0a0; color: white; }
+        .btn-royal-blue { background-color: #0000ff; color: white; }
+
+        .corrective-note {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff9c4;
+            border: 1px solid #fbc02d;
+            padding: 10px 20px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            font-size: 14px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 80%;
+            max-width: 900px;
+            height: 70vh;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Corrective Note Pop-up -->
+    <div id="correctiveNote" class="corrective-note"></div>
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="screen-login" class="login-wrapper">
+        <div class="login-card">
+            <div class="login-left">
+                <div class="flex flex-col items-center">
+                    <div class="text-6xl font-bold tracking-tighter text-gray-700">aras</div>
+                    <div class="text-3xl font-bold italic tracking-wider text-[#c21d24] -mt-2">INNOVATOR</div>
+                </div>
+                <div class="mt-auto text-[10px] text-gray-400">Release 29 Build 14.0.20.39432</div>
+            </div>
+            <div class="login-right">
+                <label class="text-xs text-gray-500 mb-1">Database</label>
+                <div class="relative mb-6">
+                    <div class="border border-gray-300 bg-white p-2 text-sm flex justify-between items-center cursor-pointer">
+                        <span class="flex items-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg> MyInnovator</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+
+                <div class="relative mb-3">
+                    <input type="text" id="username" placeholder="Username" class="w-full p-2 pl-10 border border-gray-300 text-sm focus:outline-none focus:border-blue-500" oninput="validateSimInputs()">
+                    <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>
+                </div>
+
+                <div class="relative mb-6">
+                    <input type="password" id="password" placeholder="Password" class="w-full p-2 pl-10 border border-gray-300 text-sm focus:outline-none focus:border-blue-500" oninput="validateSimInputs()">
+                    <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                </div>
+
+                <button id="loginBtn" class="w-full py-2 btn-royal-gray font-bold transition-colors cursor-not-allowed" disabled onclick="transitionToDashboard()">Login</button>
+                <div class="mt-auto text-right">
+                    <a href="#" class="text-xs text-[#c21d24] font-bold">aras.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APPLICATION UI -->
+    <div id="app-container" class="hidden h-full flex flex-col">
+        <!-- Header -->
+        <div class="header">
+            <div class="flex items-center cursor-pointer" onclick="resetSim()">
+                <svg class="w-6 h-6 mr-2 opacity-50" fill="currentColor" viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"></path></svg>
+                <span class="text-xl font-bold text-gray-700">my<span class="text-[#c21d24] italic">INNOVATOR</span></span>
+            </div>
+            <div class="ml-6 flex-1 max-w-xl relative">
+                <input type="text" class="w-full h-8 px-4 border border-gray-300 text-sm outline-none" placeholder="">
+                <svg class="w-4 h-4 absolute right-3 top-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <div class="ml-auto flex items-center space-x-4">
+                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"></path></svg>
+                <div class="relative">
+                    <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"></path></svg>
+                    <span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] rounded-full px-1">1</span>
+                </div>
+                <!-- Updated Initial to match mmiller -->
+                <div class="w-8 h-8 bg-slate-700 text-white flex items-center justify-center font-bold text-xs rounded-sm">MM</div>
+            </div>
+        </div>
+
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="p-2 border-b border-gray-300 flex items-center justify-between font-bold text-gray-600 text-sm">
+                    <div class="flex items-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg> Contents</div>
+                    <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 24 24"><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-9 8h4v-2H8c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H8c-2.76 0-5 2.24-5 5s2.24 5 5 5zm3-2h2v-2h-2v2z"></path></svg>
+                </div>
+
+                <div id="standard-nav" class="flex-1 overflow-y-auto">
+                    <div class="nav-item" onclick="triggerCorrective('Look for Training')"><span class="mr-2 opacity-50 text-[10px]">▶</span> Administration</div>
+                    <div class="nav-item" onclick="triggerCorrective('Look for Training')"><span class="mr-2 opacity-50 text-[10px]">▶</span> Aras Internal</div>
+                    <div class="nav-item" onclick="triggerCorrective('Look for Training')"><span class="mr-2 opacity-50 text-[10px]">▶</span> Change Management</div>
+                    <div class="nav-item" onclick="triggerCorrective('Look for Training')"><span class="mr-2 opacity-50 text-[10px]">▶</span> Development</div>
+                    <div class="nav-item" onclick="triggerCorrective('Look for Training')"><span class="mr-2 opacity-50 text-[10px]">▶</span> Document Center</div>
+                    <div class="nav-item" onclick="triggerCorrective('Look for Training')"><span class="mr-2 opacity-50 text-[10px]">▶</span> Marketing</div>
+                    <div class="nav-item" onclick="triggerCorrective('Look for Training')"><span class="mr-2 opacity-50 text-[10px]">▶</span> My Innovator</div>
+                    <div class="nav-item" onclick="toggleTraining()"><span id="trainingChevron" class="mr-2 opacity-50 text-[10px] transition-transform">▶</span> Training</div>
+                    
+                    <div id="trainingSubmenu" class="hidden bg-white border-b border-gray-200">
+                        <div class="submenu-item text-blue-800" onclick="enterClassesView()">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"></path></svg>
+                            Classes
+                        </div>
+                        <div class="submenu-item" onclick="triggerCorrective('Try again by looking for the word, Classes.')">
+                            <svg class="w-4 h-4 mr-2" fill="#2159a6" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                            Training Courses
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Classes Sidebar (Visible when in Classes mode) -->
+                <div id="classes-sidebar" class="hidden flex-1 p-4">
+                    <div class="flex items-center mb-6 cursor-pointer text-gray-600 hover:text-gray-900" onclick="exitClassesView()">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg>
+                        <svg class="w-5 h-5 mr-2 text-blue-800" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"></path></svg>
+                        <span class="font-bold">Classes</span>
+                    </div>
+
+                    <button class="w-full text-left p-2 border border-gray-300 rounded mb-2 text-sm flex items-center hover:bg-gray-100">
+                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"></path></svg>
+                        Create New Class
+                    </button>
+
+                    <button class="w-full text-left p-2 border border-gray-300 rounded mb-2 text-sm flex items-center hover:bg-gray-100" onclick="showResults()">
+                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
+                        Search Classes
+                    </button>
+
+                    <button class="w-full text-left p-2 border-2 border-blue-600 rounded mb-6 text-sm flex items-center bg-blue-50">
+                        <svg class="w-4 h-4 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.047a1 1 0 01.897.447l6 10c.234.39.208.879-.065 1.241l-3 4c-.22.293-.565.465-.932.465H5.8a1 1 0 01-.832-1.555l3-4.5a1 1 0 011.664 0l1 1.5 3-4.5a1 1 0 011.664 1.11l-3 4.5a1 1 0 01-1.664 0l-1-1.5-3 4.5a1 1 0 01-1.664-1.11l3-4.5z" clip-rule="evenodd"></path></svg>
+                        Quick Search
+                    </button>
+
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Searches</div>
+                    <div class="flex items-center text-sm text-gray-700 cursor-pointer hover:underline">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                        Current Classes
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 bg-[#e2e2e2] overflow-auto relative">
+                <!-- Dashboard Grid View -->
+                <div id="view-dashboard" class="widget-grid">
+                    <div class="widget-card">
+                         <svg viewBox="0 0 24 24" width="40" height="40"><circle cx="7" cy="7" r="3" fill="#00a3ad"/><circle cx="17" cy="7" r="3" fill="#444"/><circle cx="7" cy="17" r="3" fill="#444"/><circle cx="17" cy="17" r="3" fill="#00a3ad"/></svg>
+                         <div class="widget-label">Widget Templ...</div>
+                    </div>
+                    <div class="widget-card">
+                         <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M4 6h16v2H4zm2 5h12v2H6zm3 5h6v2H9z"/></svg>
+                         <div class="widget-label">Queues</div>
+                    </div>
+                    <div class="widget-card">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+                        <div class="widget-label">Jobs</div>
+                    </div>
+                    <div class="widget-card">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <div class="widget-label">Job Functions</div>
+                    </div>
+                    <div class="widget-card">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                        <div class="widget-label">Integrations</div>
+                    </div>
+                    <div class="widget-card">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M12 2l-10 5v10l10 5 10-5v-10l-10-5zm0 18.2l-8-4v-8.4l8 4 8-4v8.4l-8 4z"/></svg>
+                        <div class="widget-label">Countries</div>
+                    </div>
+                </div>
+
+                <!-- Classes Results View -->
+                <div id="view-results" class="hidden absolute inset-0 bg-white flex flex-col">
+                    <div class="h-8 bg-[#f5f5f5] border-b border-gray-300 flex items-center px-2 space-x-1">
+                        <div class="bg-white px-3 py-1 border border-gray-300 border-b-white -mb-[1px] text-[11px] flex items-center">
+                            <svg class="w-3 h-3 mr-1 text-blue-800" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"></path></svg>
+                            Classes <span class="ml-2 opacity-50">×</span>
+                        </div>
+                    </div>
+                    <div class="p-1 border-b border-gray-300 flex items-center space-x-2 bg-[#fafafa]">
+                        <button class="bg-blue-700 text-white px-3 py-1 text-xs flex items-center rounded-sm"><svg class="w-3 h-3 mr-1" fill="white" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"></path></svg> Search</button>
+                        <button class="bg-white border border-gray-300 px-3 py-1 text-xs flex items-center rounded-sm"><svg class="w-3 h-3 mr-1 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"></path></svg> Clear</button>
+                        <div class="h-4 w-px bg-gray-300 mx-1"></div>
+                        <div class="text-[11px] text-gray-600 border px-2 py-0.5 bg-white flex items-center">Simple <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"></path></svg></div>
+                        <div class="text-[11px] text-gray-600 border px-2 py-0.5 bg-white flex items-center">Default <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"></path></svg></div>
+                    </div>
+
+                    <div class="flex-1 overflow-auto">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th width="30"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4a1 1 0 01-.8 1.6H6a3 3 0 01-3-3V6z"></path></svg></th>
+                                    <th>Training Course [...]</th>
+                                    <th>Status</th>
+                                    <th>Location</th>
+                                    <th>Date [...] <span class="text-blue-700">↑</span></th>
+                                    <th>Instructor...</th>
+                                    <th>Course Name</th>
+                                </tr>
+                                <tr class="bg-blue-50">
+                                    <td></td>
+                                    <td class="bg-white"></td>
+                                    <td><div class="flex items-center">Planned <svg class="w-3 h-3 ml-auto opacity-50" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"></path></svg></div></td>
+                                    <td><div class="flex items-center"><svg class="w-3 h-3 ml-auto opacity-30" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"></path></svg></div></td>
+                                    <td><div class="flex items-center"><svg class="w-3 h-3 ml-auto opacity-30" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"></path></svg></div></td>
+                                    <td class="bg-white"></td>
+                                    <td class="bg-white"></td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ondblclick="openModal('INT-1005', 'Olga Shra...')">
+                                    <td></td>
+                                    <td class="text-blue-700 underline">INT-1005</td>
+                                    <td>Planned</td>
+                                    <td>Remote</td>
+                                    <td>2/4/2026</td>
+                                    <td class="text-blue-700 underline instructor-cell">Olga Shra...</td>
+                                    <td>INTERNAL - SAFe For POs/PMs</td>
+                                </tr>
+                                <tr class="bg-blue-50/30" ondblclick="openModal('API1_37_Online', 'Saori Oda')">
+                                    <td></td>
+                                    <td class="text-blue-700 underline">API1_37_Online</td>
+                                    <td>Planned</td>
+                                    <td>Remote</td>
+                                    <td>2/9/2026</td>
+                                    <td class="text-blue-700 underline instructor-cell">Saori Oda</td>
+                                    <td>Aras Innovator API1 37 Online (J...</td>
+                                </tr>
+                                <tr ondblclick="openModal('Developing Solutions', 'June McP...')">
+                                    <td></td>
+                                    <td class="text-blue-700 underline">Developing Solutions E...</td>
+                                    <td>Planned</td>
+                                    <td>Remote</td>
+                                    <td>2/10/2026</td>
+                                    <td class="text-blue-700 underline instructor-cell">June McP...</td>
+                                    <td>Aras Innovator Developing Soluti...</td>
+                                </tr>
+                                <tr class="bg-blue-50/30" ondblclick="openModal('PLM Essentials', 'Rennie-Re...')">
+                                    <td></td>
+                                    <td class="text-blue-700 underline">PLM Essentials USA R31</td>
+                                    <td>Planned</td>
+                                    <td>Remote</td>
+                                    <td>2/10/2026</td>
+                                    <td class="text-blue-700 underline instructor-cell">Rennie-Re...</td>
+                                    <td>Aras Innovator PLM Essentials U...</td>
+                                </tr>
+                                <tr ondblclick="openModal('Configuring Solutions', 'Richard Pr...')">
+                                    <td></td>
+                                    <td class="text-blue-700 underline">Configuring Solutions U...</td>
+                                    <td>Planned</td>
+                                    <td>Remote</td>
+                                    <td>2/16/2026</td>
+                                    <td class="text-blue-700 underline instructor-cell">Richard Pr...</td>
+                                    <td>Aras Innovator Configuring Soluti...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="h-8 bg-[#f5f5f5] border-t border-gray-300 flex items-center px-4 text-[10px] text-gray-500">
+                        <span class="mr-4 cursor-pointer hover:underline">Prev</span>
+                        <span class="mr-4 cursor-pointer hover:underline">Next</span>
+                        <div class="h-4 w-px bg-gray-300 mx-2"></div>
+                        <span class="mx-4">Page: 1 of 1</span>
+                        <div class="h-4 w-px bg-gray-300 mx-2"></div>
+                        <span class="font-bold text-gray-700">32 Results</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Class Detail -->
+    <div id="detailModal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="bg-gray-100 p-2 border-b flex items-center justify-between">
+                <div class="flex items-center text-sm font-bold text-gray-700">
+                    <svg class="w-5 h-5 mr-2 text-blue-800" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"></path></svg>
+                    Class Detail View
+                </div>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-black px-2">×</button>
+            </div>
+            <div class="p-8 flex-1 overflow-auto">
+                <div class="flex justify-between items-start mb-6">
+                    <h2 id="modalTitle" class="text-2xl font-bold text-gray-800">Aras Innovator PLM Essentials USA</h2>
+                    <div class="flex space-x-2">
+                        <button class="bg-blue-700 text-white px-6 py-1 text-sm rounded font-bold">Edit</button>
+                        <button class="bg-white border border-gray-300 px-3 py-1 text-sm rounded">Refresh</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div class="flex border-b pb-1"><span class="w-32 text-xs text-gray-400 font-bold uppercase">Course ID</span> <span id="modalCourseId" class="text-blue-700 underline text-sm">PLM Essentials</span></div>
+                        <div class="flex border-b pb-1"><span class="w-32 text-xs text-gray-400 font-bold uppercase">Instructor</span> <span id="modalInstructor" class="text-blue-700 underline text-sm">Instructor Name</span></div>
+                        <div class="flex border-b pb-1"><span class="w-32 text-xs text-gray-400 font-bold uppercase">Location</span> <span class="text-sm">Remote</span></div>
+                        <div class="flex border-b pb-1"><span class="w-32 text-xs text-gray-400 font-bold uppercase">Status</span> <span class="text-sm font-bold text-green-700">Planned</span></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex border-b pb-1"><span class="w-32 text-xs text-gray-400 font-bold uppercase">Delivery</span> <span class="text-sm">Virtual: Instructor-led</span></div>
+                        <div class="flex border-b pb-1"><span class="w-32 text-xs text-gray-400 font-bold uppercase">Date</span> <span class="text-sm">2/10/2026</span></div>
+                        <div class="flex border-b pb-1"><span class="w-32 text-xs text-gray-400 font-bold uppercase">Language</span> <span class="text-sm">English</span></div>
+                    </div>
+                </div>
+                
+                <div class="mt-12 bg-blue-50 p-4 border border-blue-100 rounded">
+                    <p class="text-sm text-blue-800">Instructor confirmation has been sent for this session.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Simulation Logic
+         * Updated Credentials:
+         * Login: mmiller
+         * Pwd: innovator
+         */
+        
+        function validateSimInputs() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            
+            // Explicit login check per user request
+            const isUserValid = u === 'mmiller';
+            const isPwdValid = p === 'innovator';
+
+            if (isUserValid && isPwdValid) {
+                btn.classList.remove('btn-royal-gray', 'cursor-not-allowed');
+                btn.classList.add('btn-royal-blue');
+                btn.disabled = false;
+            } else {
+                btn.classList.add('btn-royal-gray', 'cursor-not-allowed');
+                btn.classList.remove('btn-royal-blue');
+                btn.disabled = true;
+            }
+        }
+
+        function transitionToDashboard() {
+            document.getElementById('screen-login').style.display = 'none';
+            document.getElementById('app-container').classList.remove('hidden');
+        }
+
+        function triggerCorrective(msg) {
+            const note = document.getElementById('correctiveNote');
+            note.innerText = msg;
+            note.style.display = 'block';
+            setTimeout(() => { note.style.display = 'none'; }, 2500);
+        }
+
+        function toggleTraining() {
+            const menu = document.getElementById('trainingSubmenu');
+            const chev = document.getElementById('trainingChevron');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                chev.style.transform = 'rotate(90deg)';
+            } else {
+                menu.classList.add('hidden');
+                chev.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function enterClassesView() {
+            document.getElementById('standard-nav').classList.add('hidden');
+            document.getElementById('classes-sidebar').classList.remove('hidden');
+        }
+
+        function exitClassesView() {
+            document.getElementById('standard-nav').classList.remove('hidden');
+            document.getElementById('classes-sidebar').classList.add('hidden');
+            document.getElementById('view-results').classList.add('hidden');
+        }
+
+        function showResults() {
+            document.getElementById('view-results').classList.remove('hidden');
+            // Guidance: Highlight Instructor column
+            const cells = document.querySelectorAll('.instructor-cell');
+            cells.forEach(c => c.style.backgroundColor = 'var(--row-hover)');
+        }
+
+        function openModal(course, instructor) {
+            document.getElementById('modalTitle').innerText = `Aras Innovator ${course}`;
+            document.getElementById('modalCourseId').innerText = course;
+            document.getElementById('modalInstructor').innerText = instructor;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        function resetSim() {
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            validateSimInputs();
+            document.getElementById('screen-login').style.display = 'flex';
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('view-results').classList.add('hidden');
+            document.getElementById('standard-nav').classList.remove('hidden');
+            document.getElementById('classes-sidebar').classList.add('hidden');
+            document.getElementById('trainingSubmenu').classList.add('hidden');
+            document.getElementById('trainingChevron').style.transform = 'rotate(0deg)';
+        }
+    </script>
+</body>
+</html>
