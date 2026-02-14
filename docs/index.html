@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyInnovator Training Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --aras-red: #c21d24;
+            --sidebar-bg: #f5f5f5;
+            --border-color: #d1d1d1;
+            --header-bg: #eeeeee;
+            --active-blue: #0000ff;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+
+        /* Aras UI specific styles */
+        .header {
+            height: 48px;
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 48px);
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #444;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: #e0e0e0;
+        }
+
+        .nav-item.active {
+            background-color: #e8e8e8;
+            font-weight: bold;
+        }
+
+        .chevron {
+            width: 12px;
+            height: 12px;
+            margin-right: 8px;
+            transition: transform 0.2s;
+        }
+
+        .chevron.open {
+            transform: rotate(90deg);
+        }
+
+        .content-area {
+            flex: 1;
+            background-color: #e2e2e2;
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+        }
+
+        .grid-container {
+            background: white;
+            border: 1px solid var(--border-color);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Search Screen Buttons */
+        .btn-action {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 8px;
+            width: fit-content;
+            cursor: pointer;
+        }
+
+        .btn-action:hover {
+            background: #f0f0f0;
+        }
+
+        /* Data Grid Mockup */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .data-table th {
+            background: #eee;
+            border: 1px solid #ccc;
+            padding: 4px 8px;
+            text-align: left;
+            font-weight: normal;
+        }
+
+        .data-table td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            background: white;
+        }
+
+        .data-table tr:hover td {
+            background: #fdfae5;
+        }
+
+        .status-planned {
+            color: #000;
+            cursor: cell;
+        }
+
+        .link-text {
+            color: #2159a6;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            width: 400px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .search-bar {
+            width: 400px;
+            height: 28px;
+            border: 1px solid #ccc;
+            margin-left: 20px;
+            display: flex;
+            align-items: center;
+            background: white;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #444;
+        }
+        .logo-red {
+            color: var(--aras-red);
+            font-style: italic;
+        }
+
+        .tab-strip {
+            height: 30px;
+            background: #f0f0f0;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+        }
+
+        .tab {
+            padding: 0 15px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            font-size: 12px;
+            margin-right: 2px;
+            border-top: 2px solid var(--aras-red);
+        }
+
+        .toolbar {
+            padding: 5px 10px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            gap: 5px;
+        }
+
+        .toolbar-btn {
+            padding: 4px 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .toolbar-btn.primary {
+            background: #2b5797;
+            color: white;
+            border-color: #1e3e6d;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <div class="header">
+        <div class="flex items-center">
+            <svg viewBox="0 0 24 24" width="24" height="24" class="mr-2 opacity-70"><path fill="#333" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg>
+            <span class="logo-text">my<span class="logo-red">INNOVATOR</span></span>
+        </div>
+        <div class="search-bar">
+            <input type="text" class="w-full h-full px-2 text-sm outline-none" placeholder="">
+            <div class="p-1 cursor-pointer">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#666" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            </div>
+        </div>
+        <div class="ml-auto flex items-center space-x-4">
+            <svg viewBox="0 0 24 24" width="20" height="20" class="opacity-60"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+            <div class="relative">
+                <svg viewBox="0 0 24 24" width="20" height="20" class="opacity-60"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                <span class="absolute -top-1 -right-1 bg-aras-red text-white text-[8px] rounded-full px-1">1</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="flex items-center">
+                    <svg viewBox="0 0 24 24" width="20" height="20" class="mr-2"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                    Contents
+                </div>
+                <svg viewBox="0 0 24 24" width="16" height="16" class="cursor-pointer opacity-70"><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-9 8h4v-2H8c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H8c-2.76 0-5 2.24-5 5s2.24 5 5 5zm3-2h2v-2h-2v2z"/></svg>
+            </div>
+            
+            <div class="flex-1">
+                <!-- Collapsed items list -->
+                <div class="nav-item"><span class="chevron">▶</span> Administration</div>
+                <div class="nav-item"><span class="chevron">▶</span> Aras Internal</div>
+                <div class="nav-item"><span class="chevron">▶</span> Change Management</div>
+                <div class="nav-item"><span class="chevron">▶</span> Development</div>
+                <div class="nav-item"><span class="chevron">▶</span> Document Center</div>
+                <div class="nav-item"><span class="chevron">▶</span> Marketing</div>
+                <div class="nav-item"><span class="chevron">▶</span> My Innovator</div>
+                <div class="nav-item"><span class="chevron">▶</span> Portfolio</div>
+                <div class="nav-item"><span class="chevron">▶</span> SAFe Portal</div>
+                <div class="nav-item"><span class="chevron">▶</span> Sales</div>
+                <div class="nav-item"><span class="chevron">▶</span> Subscriber Portal</div>
+                <div class="nav-item"><span class="chevron">▶</span> Technical Documentation</div>
+                
+                <!-- Training Section -->
+                <div id="training-section" class="nav-item" onclick="toggleTraining()">
+                    <span id="training-chevron" class="chevron">▶</span> Training
+                </div>
+                <div id="training-menu" class="hidden pl-6 bg-white border-b border-gray-200">
+                    <div class="nav-item" onclick="openClasses()">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="mr-2"><path fill="#2159a6" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                        Classes
+                    </div>
+                    <div class="nav-item">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="mr-2"><path fill="#2159a6" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        Training Courses
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Workspace Area -->
+        <div id="main-content" class="content-area">
+            <!-- Initial State (Image 1 Style Grid) -->
+            <div id="dashboard-view" class="grid grid-cols-6 gap-6">
+                <!-- Simulated Widgets from Screenshot 1 -->
+                <div class="flex flex-col items-center">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border w-24 h-24 flex items-center justify-center mb-2">
+                         <svg viewBox="0 0 24 24" width="40" height="40"><circle cx="7" cy="7" r="3" fill="#00a3ad"/><circle cx="17" cy="7" r="3" fill="#444"/><circle cx="7" cy="17" r="3" fill="#444"/><circle cx="17" cy="17" r="3" fill="#00a3ad"/></svg>
+                    </div>
+                    <span class="text-[11px] text-center">Widget Templ...</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border w-24 h-24 flex items-center justify-center mb-2">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M4 6h16v2H4zm2 5h12v2H6zm3 5h6v2H9z"/></svg>
+                    </div>
+                    <span class="text-[11px]">Queues</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border w-24 h-24 flex items-center justify-center mb-2">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+                    </div>
+                    <span class="text-[11px]">Jobs</span>
+                </div>
+                 <div class="flex flex-col items-center">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border w-24 h-24 flex items-center justify-center mb-2">
+                         <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <span class="text-[11px]">Job Functions</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border w-24 h-24 flex items-center justify-center mb-2">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                    </div>
+                    <span class="text-[11px]">Integrations</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border w-24 h-24 flex items-center justify-center mb-2">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="#2b5797"><path d="M12 2l-10 5v10l10 5 10-5v-10l-10-5zm0 18.2l-8-4v-8.4l8 4 8-4v8.4l-8 4z"/></svg>
+                    </div>
+                    <span class="text-[11px]">Countries</span>
+                </div>
+            </div>
+
+            <!-- Classes View (Image 3/4) -->
+            <div id="classes-view" class="hidden absolute inset-0 flex">
+                <!-- Search Panel (Image 3) -->
+                <div class="w-1/4 bg-white border-r border-gray-300 p-4">
+                    <div class="flex items-center mb-6 cursor-pointer hover:bg-gray-100 p-1" onclick="backToDashboard()">
+                        <svg viewBox="0 0 24 24" width="20" height="20" class="mr-2"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        <svg viewBox="0 0 24 24" width="20" height="20" class="mr-2"><path fill="#2159a6" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                        <span class="font-bold text-lg">Classes</span>
+                    </div>
+
+                    <div class="btn-action border-gray-300 text-gray-700 w-full mb-2">
+                         <svg viewBox="0 0 24 24" width="16" height="16" class="mr-2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                         Create New Class
+                    </div>
+
+                    <div id="btn-search-trigger" class="btn-action border-gray-300 text-gray-700 w-full mb-2" onclick="performSearch()">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="mr-2"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        Search Classes
+                    </div>
+
+                    <div class="btn-action border-blue-600 text-blue-700 w-full border-2">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="mr-2"><path fill="blue" d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg>
+                        Quick Search
+                    </div>
+
+                    <div class="mt-6 text-xs text-gray-500 font-bold uppercase">Searches</div>
+                    <div class="nav-item p-0 py-2">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="mr-2"><path fill="#666" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        Current Classes
+                    </div>
+                </div>
+
+                <!-- Results Area (Image 4) -->
+                <div id="results-panel" class="flex-1 bg-white hidden flex flex-col">
+                    <div class="tab-strip">
+                        <div class="tab">Classes <span class="ml-2 text-gray-400">×</span></div>
+                    </div>
+                    <div class="toolbar">
+                        <div class="toolbar-btn primary">
+                             <svg viewBox="0 0 24 24" width="14" height="14"><path fill="white" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            Search
+                        </div>
+                        <div class="toolbar-btn">
+                             <svg viewBox="0 0 24 24" width="14" height="14" class="mr-1"><path fill="#444" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                             Clear
+                        </div>
+                        <div class="toolbar-btn">Simple <svg viewBox="0 0 24 24" width="14" height="14"><path d="M7 10l5 5 5-5z"/></svg></div>
+                        <div class="toolbar-btn">Default <svg viewBox="0 0 24 24" width="14" height="14"><path d="M7 10l5 5 5-5z"/></svg></div>
+                        <div class="toolbar-btn"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></div>
+                    </div>
+                    
+                    <div class="flex-1 overflow-auto">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th width="30"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/></svg></th>
+                                    <th>Training Course [...]</th>
+                                    <th>Status</th>
+                                    <th>Location</th>
+                                    <th>Date [...] ↑</th>
+                                    <th>Instructor...</th>
+                                    <th>Course Name</th>
+                                </tr>
+                                <tr class="bg-[#f0f0ff]">
+                                    <td><svg viewBox="0 0 24 24" width="14" height="14"><path d="M7 10l5 5 5-5z"/></svg></td>
+                                    <td></td>
+                                    <td><div class="flex items-center">Planned <svg viewBox="0 0 24 24" width="14" height="14" class="ml-auto"><path d="M7 10l5 5 5-5z"/></svg></div></td>
+                                    <td><div class="flex items-center"><svg viewBox="0 0 24 24" width="14" height="14" class="ml-auto"><path d="M7 10l5 5 5-5z"/></svg></div></td>
+                                    <td><div class="flex items-center"><svg viewBox="0 0 24 24" width="14" height="14" class="ml-auto"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg></div></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td></td>
+                                    <td class="link-text">INT-1005</td>
+                                    <td class="status-planned" ondblclick="showClassDetail('INT-1005', 'Olga Shra...')">Planned</td>
+                                    <td>Remote</td>
+                                    <td></td>
+                                    <td class="link-text">Olga Shra...</td>
+                                    <td>INTERNAL - SAFe For POs/PMs</td>
+                                </tr>
+                                <tr class="bg-blue-50">
+                                    <td></td>
+                                    <td class="link-text">API1_37_Online</td>
+                                    <td class="status-planned" ondblclick="showClassDetail('API1_37_Online', 'Saori Oda')">Planned</td>
+                                    <td>Remote</td>
+                                    <td>1/28/2026</td>
+                                    <td class="link-text">Saori Oda</td>
+                                    <td>Aras Innovator API1 37 Online (J...</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td class="link-text">API2_37_Online</td>
+                                    <td class="status-planned" ondblclick="showClassDetail('API2_37_Online', 'Saori Oda')">Planned</td>
+                                    <td>Remote</td>
+                                    <td>1/30/2026</td>
+                                    <td class="link-text">Saori Oda</td>
+                                    <td>Aras Innovator API2 37 Online (J...</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td class="link-text">Developing Solutions E...</td>
+                                    <td class="status-planned" ondblclick="showClassDetail('Developing Solutions', 'June McP...')">Planned</td>
+                                    <td>Remote</td>
+                                    <td>2/2/2026</td>
+                                    <td class="link-text">June McP...</td>
+                                    <td>Aras Innovator Developing Soluti...</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td class="link-text">PLM Essentials_37_Onl...</td>
+                                    <td class="status-planned" ondblclick="showClassDetail('PLM Essentials', 'Wakana T...')">Planned</td>
+                                    <td>Remote</td>
+                                    <td>2/5/2026</td>
+                                    <td class="link-text">Wakana T...</td>
+                                    <td>Aras Innovator PLM Essentials 3...</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td class="link-text">Configuring Solutions U...</td>
+                                    <td class="status-planned" ondblclick="showClassDetail('Configuring Solutions', 'Richard Pr...')">Planned</td>
+                                    <td>Remote</td>
+                                    <td>2/9/2026</td>
+                                    <td class="link-text">Richard Pr...</td>
+                                    <td>Aras Innovator Configuring Soluti...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="h-8 bg-[#f5f5f5] border-t border-gray-300 flex items-center px-4 text-xs text-gray-600">
+                        <span>Prev</span><span class="ml-4">Next</span>
+                        <span class="mx-10">Page: 1 of 1</span>
+                        <span class="font-bold">31 Results</span>
+                    </div>
+                </div>
+
+                <!-- Empty state for search panel before search -->
+                <div id="search-instruction" class="flex-1 bg-[#e2e2e2] flex items-center justify-center">
+                    <div class="text-center text-gray-500">
+                        <svg viewBox="0 0 24 24" width="60" height="60" class="mx-auto mb-4 opacity-20"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <p>Select "Search Classes" to view availability.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="modal-overlay" class="modal-overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="font-bold text-lg">Class Details</h3>
+                <span class="cursor-pointer text-xl" onclick="closeModal()">×</span>
+            </div>
+            <div id="modal-content" class="space-y-3 text-sm">
+                <!-- Content injected here -->
+            </div>
+            <button class="mt-6 w-full py-2 bg-gray-200 rounded hover:bg-gray-300" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleTraining() {
+            const menu = document.getElementById('training-menu');
+            const chevron = document.getElementById('training-chevron');
+            const section = document.getElementById('training-section');
+            
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                chevron.classList.add('open');
+                section.classList.add('active');
+            } else {
+                menu.classList.add('hidden');
+                chevron.classList.remove('open');
+                section.classList.remove('active');
+            }
+        }
+
+        function openClasses() {
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('classes-view').classList.remove('hidden');
+        }
+
+        function backToDashboard() {
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            document.getElementById('classes-view').classList.add('hidden');
+        }
+
+        function performSearch() {
+            document.getElementById('search-instruction').classList.add('hidden');
+            document.getElementById('results-panel').classList.remove('hidden');
+            
+            // Highlight the instructor column as per goal
+            const cells = document.querySelectorAll('.data-table td:nth-child(6)');
+            cells.forEach(cell => {
+                cell.style.backgroundColor = '#fff9c4'; // Highlight instructor column
+            });
+        }
+
+        function showClassDetail(course, instructor) {
+            const content = document.getElementById('modal-content');
+            content.innerHTML = `
+                <div class="flex justify-between"><span class="text-gray-500">Course:</span> <strong>${course}</strong></div>
+                <div class="flex justify-between"><span class="text-gray-500">Status:</span> <span class="text-green-600 font-bold">PLANNED</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Instructor:</span> <strong>${instructor}</strong></div>
+                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <p class="text-xs">This class is currently available for registration. Please check the Learning Management System for enrollment details.</p>
+                </div>
+            `;
+            document.getElementById('modal-overlay').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        // Initialize state
+        window.onload = () => {
+            console.log("MyInnovator Simulator Loaded");
+        };
+    </script>
+</body>
+</html>
